@@ -1,0 +1,66 @@
+# Import necessary libraries
+import pandas as pd
+import nltk
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
+
+# Download NLTK resources (run once)
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('wordnet')
+nltk.download('averaged_perceptron_tagger')
+
+# Step 1: Read the CSV File
+data = pd.read_csv('questions_answers.csv')  # Replace with your file path
+print("Original Data:")
+print(data.head())
+
+# Step 2: Apply Word Tokenization
+def tokenize_question(question):
+    return word_tokenize(question)
+
+data['tokens'] = data['questions'].apply(tokenize_question)
+
+# Step 3: Remove Stopwords
+stop_words = set(stopwords.words('english'))
+
+def remove_stopwords(tokens):
+    return [word for word in tokens if word.lower() not in stop_words]
+
+data['filtered_tokens'] = data['tokens'].apply(remove_stopwords)
+
+# Step 4: Apply Lemmatization with POS Tagging
+lemmatizer = WordNetLemmatizer()
+
+def lemmatize_tokens(tokens):
+    pos_tags = nltk.pos_tag(tokens)
+    lemmatized_tokens = [lemmatizer.lemmatize(word, pos=get_wordnet_pos(tag)) for word, tag in pos_tags]
+    return lemmatized_tokens
+
+def get_wordnet_pos(tag):
+    if tag.startswith('J'):
+        return 'a'  # Adjective
+    elif tag.startswith('V'):
+        return 'v'  # Verb
+    elif tag.startswith('N'):
+        return 'n'  # Noun
+    elif tag.startswith('R'):
+        return 'r'  # Adverb
+    else:
+        return 'n'  # Default to noun
+
+data['lemmatized_tokens'] = data['filtered_tokens'].apply(lemmatize_tokens)
+
+# Step 5: Combine Words with a Hyphen
+data['processed_questions'] = data['lemmatized_tokens'].apply(lambda tokens: '-'.join(tokens))
+
+# Step 6: Map Respective Answers
+processed_data = pd.DataFrame({
+    'processed_questions': data['processed_questions'],
+    'answers': data['answers']
+})
+
+# Step 7: Store Results in Output CSV File
+processed_data.to_csv('processed_questions_answers.csv', index=False)
+print("Processed Data Saved to processed_questions_answers.csv")
