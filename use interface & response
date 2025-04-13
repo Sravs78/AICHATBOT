@@ -1,0 +1,30 @@
+# Import necessary libraries
+import pandas as pd
+
+# Load processed data from Module-1
+processed_data = pd.read_csv('processed_questions_answers.csv')
+
+# Step 1: Ask the User a Question
+user_input = input("Ask a question: ")
+
+# Step 2: Preprocess the Question (same steps as Module-1)
+def preprocess_question(question):
+    tokens = word_tokenize(question)
+    filtered_tokens = [word for word in tokens if word.lower() not in stop_words]
+    lemmatized_tokens = [lemmatizer.lemmatize(word, pos=get_wordnet_pos(tag)) 
+                         for word, tag in nltk.pos_tag(filtered_tokens)]
+    processed_question = '-'.join(lemmatized_tokens)
+    return processed_question
+
+preprocessed_input = preprocess_question(user_input)
+
+# Step 3: Find the Answer from Output CSV File
+matched_row = processed_data[processed_data['processed_questions'] == preprocessed_input]
+
+if not matched_row.empty:
+    answer = matched_row.iloc[0]['answers']
+else:
+    answer = "Sorry, I couldn't find an answer to your question."
+
+# Step 4: Display Output
+print("Answer:", answer)
